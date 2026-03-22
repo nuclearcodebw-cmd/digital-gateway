@@ -1,0 +1,32 @@
+# render.yaml — Render Blueprint
+# This file tells Render how to deploy both your frontend and backend automatically.
+
+services:
+  # ── 1. BACKEND: Python/Flask API ───────────────────────────────
+  - type: web
+    name: bocra-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn backend:app --bind 0.0.0.0:$PORT
+    plan: free
+    envVars:
+      - key: BOCRA_SECRET
+        generateValue: true   # Render auto-generates a secure random value
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    disk:
+      name: bocra-data
+      mountPath: /opt/render/project/src
+      sizeGB: 1               # stores bocra.db + uploads
+
+  # ── 2. FRONTEND: Static HTML site ──────────────────────────────
+  - type: web
+    name: bocra-frontend
+    runtime: static
+    staticPublishPath: .
+    buildCommand: ""          # no build step needed — just plain HTML
+    plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
